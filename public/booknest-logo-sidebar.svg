@@ -1,0 +1,11 @@
+<svg width="520" height="140" viewBox="0 0 520 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="24" y="34" width="84" height="84" rx="24" fill="#7C3AED"/>
+  <path d="M48 61C48 56.5817 51.5817 53 56 53H77C81.4183 53 85 56.5817 85 61V96C85 100.418 81.4183 104 77 104H56C51.5817 104 48 100.418 48 96V61Z" fill="white"/>
+  <path d="M79 61C79 56.5817 82.5817 53 87 53H110C114.418 53 118 56.5817 118 61V96C118 100.418 114.418 104 110 104H87C82.5817 104 79 100.418 79 96V61Z" fill="#DDD6FE"/>
+  <path d="M82 55V103" stroke="#7C3AED" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="62" cy="45" r="5" fill="white"/>
+  <circle cx="98" cy="45" r="5" fill="white"/>
+  <path d="M60 82L73 95L103 65" stroke="#10B981" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="130" y="78" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="44" font-weight="800" fill="#FFFFFF">BookNest</text>
+  <text x="133" y="105" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" font-weight="500" fill="#CBD5E1">Embeddable booking system</text>
+</svg>

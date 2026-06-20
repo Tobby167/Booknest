@@ -1,0 +1,19 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F8FAFC"/>
+  <rect x="70" y="70" width="1060" height="490" rx="48" fill="white" stroke="#E2E8F0" stroke-width="2"/>
+  <circle cx="995" cy="148" r="170" fill="#DDD6FE" opacity="0.7"/>
+  <circle cx="143" cy="512" r="155" fill="#DCFCE7" opacity="0.75"/>
+  <rect x="112" y="126" width="132" height="132" rx="34" fill="#7C3AED"/>
+  <path d="M149 169C149 162.373 154.373 157 161 157H194C200.627 157 206 162.373 206 169V222C206 228.627 200.627 234 194 234H161C154.373 234 149 228.627 149 222V169Z" fill="white"/>
+  <path d="M195 169C195 162.373 200.373 157 207 157H242C248.627 157 254 162.373 254 169V222C254 228.627 248.627 234 242 234H207C200.373 234 195 228.627 195 222V169Z" fill="#DDD6FE"/>
+  <path d="M199 160V231" stroke="#7C3AED" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="170" cy="145" r="8" fill="white"/>
+  <circle cx="224" cy="145" r="8" fill="white"/>
+  <path d="M168 200L187 219L233 173" stroke="#10B981" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="285" y="193" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="78" font-weight="900" fill="#0F172A">BookNest</text>
+  <text x="292" y="244" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="27" font-weight="700" fill="#64748B">Embeddable booking system for service businesses</text>
+  <text x="116" y="370" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="43" font-weight="900" fill="#0F172A">Bookings, receipts, reminders, and embeds.</text>
+  <text x="118" y="432" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="28" font-weight="600" fill="#475569">Built for beauty, hair, and appointment-based businesses.</text>
+  <rect x="118" y="485" width="330" height="56" rx="18" fill="#7C3AED"/>
+  <text x="152" y="522" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="23" font-weight="800" fill="white">Book appointments online</text>
+</svg>
