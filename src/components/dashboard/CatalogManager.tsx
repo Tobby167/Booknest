@@ -51,7 +51,7 @@ export function CatalogManager({ initialTab = "services" }: { initialTab?: Tab }
   const [loading, setLoading] = useState(true);
   const businessCurrency = catalog.business?.currency || "USD";
   const activeTabLabel = tabs.find((item) => item.id === tab)?.label ?? "Items";
-  const activeItemLabel = activeTabLabel.replace(/s$/, "");
+  const activeItemLabel = singularLabels[tab];
 
   async function load() {
     setLoading(true);

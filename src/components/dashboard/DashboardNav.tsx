@@ -16,6 +16,7 @@ import {
   ListChecks,
   LogOut,
   Menu,
+  Plug,
   Scissors,
   Settings,
   ShieldCheck,
@@ -80,6 +81,7 @@ const groups = [
     icon: Settings,
     links: [
       { href: "/dashboard/embed-code", label: "Embed Code", icon: Code },
+      { href: "/dashboard/integrations", label: "Integrations", icon: Plug },
       { href: "/dashboard/transfer-owner", label: "Transfer Owner", icon: Handshake },
       { href: "/admin", label: "Admin", icon: ShieldCheck },
       { href: "/dashboard/settings", label: "Settings", icon: Settings }
