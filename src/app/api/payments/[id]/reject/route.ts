@@ -32,12 +32,8 @@ export async function PUT(_request: Request, context: RouteContext) {
   await supabase.from("audit_logs").insert({
     business_id: payment.business_id,
     user_id: user.id,
-    action: "payment_rejected",
-    details: {
-      payment_id: payment.id,
-      appointment_id: payment.appointment_id,
-      reason: reason || "No reason provided"
-    }
+    event_type: "payment_rejected",
+    message: `Payment rejected for appointment ${payment.appointment_id.slice(0, 8).toUpperCase()}${reason ? `: ${reason}` : ""}`
   });
   return ok({ payment });
 }

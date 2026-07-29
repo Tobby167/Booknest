@@ -31,8 +31,8 @@ export async function PUT(request: Request, context: RouteContext) {
   await supabase.from("audit_logs").insert({
     business_id: appointment.business_id,
     user_id: user.id,
-    action: "appointment_status_updated",
-    details: { appointment_id: id, status: parsed.data.status }
+    event_type: "appointment_status_updated",
+    message: `Appointment status updated to '${parsed.data.status}' for ${appointment.client_name}`
   });
 
   return ok({ appointment });
