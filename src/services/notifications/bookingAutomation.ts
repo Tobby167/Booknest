@@ -144,10 +144,46 @@ export async function processMessage(
   const text = incomingText.trim();
   const step = currentState.step ?? "idle";
 
+  // ── Global slash command interceptor ────────────────────────────────────
+  // Slash commands always win — they bypass whatever step is in progress.
+  // This means /book mid-conversation correctly restarts the booking flow.
+  if (text.startsWith("/") && !isReset(text)) {
+    if (/^\/book$/i.test(text)) {
+      // Force into the book flow immediately
+      const { data: services } = await supabase
+        .from("services")
+        .select("id, name, duration_minutes, base_price, price_type")
+        .eq("business_id", businessId)
+        .eq("is_active", true)
+        .order("display_order");
+
+      if (!services || services.length === 0) {
+        return { reply: "Sorry, no services are currently available. Please try again later.", newState: { step: "idle" } };
+      }
+      const list = (services as { id: string; name: string }[]).map((s, i) => `${i + 1}. ${s.name}`).join("\n");
+      return {
+        reply: `Great! Please choose a service:\n\n${list}\n\nReply with a number.`,
+        newState: { step: "awaiting_service" }
+      };
+    }
+    if (/^\/bookings?$/i.test(text)) {
+      return await handleShowBookings(supabase, businessId, externalChatId);
+    }
+    if (/^\/cancel$/i.test(text)) {
+      return await handleCancelSelect(supabase, businessId, externalChatId);
+    }
+    if (/^\/reschedule$/i.test(text)) {
+      return await handleRescheduleSelect(supabase, businessId, externalChatId);
+    }
+    // Unknown slash command — show menu
+    return { reply: buildMenu(businessName), newState: { step: "idle" } };
+  }
+
   // ── Global resets ───────────────────────────────────────────────────────
   if (isReset(text) && step !== "idle") {
     return { reply: buildMenu(businessName), newState: { step: "idle" } };
   }
+
 
   // ── idle ────────────────────────────────────────────────────────────────
   if (step === "idle") {
@@ -472,23 +508,40 @@ async function createBooking(
   state: ConversationState,
   externalChatId: string
 ): Promise<ProcessResult> {
-  try {
-    const { data, error } = await supabase.rpc("create_public_booking", {
-      p_business_slug: businessSlug,
-      p_service_id: state.service_id,
-      p_service_option_id: state.option_id ?? null,
-      p_addon_ids: [],
-      p_appointment_date: state.date,
-      p_start_time: state.time,
-      p_client_name: state.client_name ?? "Guest",
-      p_client_email: null,
-      p_client_phone: externalChatId,
-      p_notes: "Booked via WhatsApp/Telegram",
-      p_receipt_image_url: null,
-      p_form_answers: []
-    });
+  const payload = {
+    p_business_slug: businessSlug,
+    p_service_id: state.service_id,
+    p_service_option_id: state.option_id ?? null,
+    p_addon_ids: [],
+    p_appointment_date: state.date,
+    p_start_time: state.time,
+    p_client_name: state.client_name ?? "Guest",
+    p_client_email: null,
+    p_client_phone: externalChatId,
+    p_notes: "Booked via WhatsApp/Telegram",
+    p_receipt_image_url: null,
+    p_form_answers: []
+  };
 
-    if (error) throw error;
+  console.log("=== ENTERED createBooking ===");
+  console.log("businessSlug:", businessSlug);
+  console.log("state.service_id:", state.service_id);
+  console.log("state.option_id:", state.option_id);
+  console.log("state.date:", state.date);
+  console.log("state.time:", state.time);
+  console.log("state.client_name:", state.client_name);
+  console.log("externalChatId:", externalChatId);
+  console.log("RPC Payload:", JSON.stringify(payload, null, 2));
+
+  try {
+    const { data, error } = await supabase.rpc("create_public_booking", payload);
+
+    if (error) {
+      console.error("=== RPC RETURNED ERROR OBJECT ===");
+      console.error("data:", data);
+      console.error("error:", error);
+      throw error;
+    }
 
     return {
       reply:
@@ -500,8 +553,16 @@ async function createBooking(
         `We'll send you a reminder before your appointment. Reply "menu" to return to the main menu.`,
       newState: { step: "idle" }
     };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Unknown error";
+  } catch (e: any) {
+    console.error("=== CREATE PUBLIC BOOKING ERROR ===");
+    console.error(e);
+    console.error("message:", e?.message);
+    console.error("details:", e?.details);
+    console.error("hint:", e?.hint);
+    console.error("code:", e?.code);
+    console.error(JSON.stringify(e, null, 2));
+
+    const msg = e?.message || e?.details || (typeof e === "string" ? e : JSON.stringify(e));
     return {
       reply: `❌ Sorry, we couldn't complete your booking: ${msg}\n\nReply "menu" to try again.`,
       newState: { step: "idle" }
