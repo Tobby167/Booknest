@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { CalendarCheck2, CalendarDays, Clock, LogOut, Store } from "lucide-react";
+import { CalendarCheck2, CalendarDays, Clock, LogOut, Store, ChevronLeft } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { currencyFor, dateLabel, timeLabel } from "@/lib/format";
 
@@ -24,7 +24,9 @@ type AppointmentRow = {
   service_options?: { name: string } | null;
 };
 
-export default async function ClientBookingsPage() {
+export default async function ClientBookingsPage({ searchParams }: { searchParams?: Promise<{ next?: string }> }) {
+  const resolvedParams = await (searchParams ?? Promise.resolve({} as { next?: string }));
+  const nextPath = typeof resolvedParams.next === "string" && resolvedParams.next.startsWith("/book/") ? resolvedParams.next : null;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user }
@@ -47,6 +49,21 @@ export default async function ClientBookingsPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-5xl mb-8 flex items-center justify-between border-b border-slate-200 pb-4">
+        <Link href="/client/bookings" className="transition hover:opacity-85">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt="BookNest" className="h-8 w-auto" src="/booknest-logo.svg" />
+        </Link>
+        {nextPath && (
+          <Link
+            href={nextPath}
+            className="flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.14em] text-purple-600 hover:text-purple-950 transition"
+          >
+            <ChevronLeft className="h-4 w-4" /> Back to Booking
+          </Link>
+        )}
+      </div>
+
       <section className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

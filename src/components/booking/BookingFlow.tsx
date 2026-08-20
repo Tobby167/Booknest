@@ -817,7 +817,7 @@ export function BookingFlow({ businessSlug, embed = false }: BookingFlowProps) {
   }
 
   return (
-    <section className={`w-full min-w-0 overflow-hidden ${embed ? "bg-white p-4" : "card p-5 sm:p-7"}`}>
+    <section className={`w-full min-w-0 overflow-hidden ${embed ? "bg-white p-4" : "card p-3 sm:p-7"}`}>
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-5 border-b border-ink/10 pb-6">
         <div className="flex min-w-0 flex-wrap items-center gap-5">
           {catalog.business.logo_url ? (
@@ -856,7 +856,7 @@ export function BookingFlow({ businessSlug, embed = false }: BookingFlowProps) {
                   This appointment will be saved to your BookNest client history and checked against your other booking times.
                 </p>
               </div>
-              <Link className="rounded-lg border border-purple-700 bg-white px-4 py-2 text-sm font-black text-purple-800" href="/client/bookings">
+              <Link className="rounded-lg border border-purple-700 bg-white px-4 py-2 text-sm font-black text-purple-800" href={`/client/bookings?next=${encodeURIComponent(pathname)}`}>
                 My bookings
               </Link>
             </div>
@@ -1006,7 +1006,7 @@ export function BookingFlow({ businessSlug, embed = false }: BookingFlowProps) {
 
         {readyForDetails ? (
           <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-            <div className="min-w-0 rounded-xl border border-slate-300 bg-white p-3 shadow-sm sm:p-4">
+            <div className="min-w-0 rounded-xl border border-slate-300 bg-white p-2 shadow-sm sm:p-4">
               <div className="mb-4 flex items-center justify-between gap-2">
                 <button className="rounded-lg border border-slate-400 bg-white p-2 text-slate-900 hover:border-purple-700 hover:text-purple-700" onClick={() => changeCalendarMonth(-1)} type="button">
                   <ChevronLeft className="h-5 w-5" />
@@ -1027,7 +1027,7 @@ export function BookingFlow({ businessSlug, embed = false }: BookingFlowProps) {
                   const disabled = !day || value < today || value > maxBookableDate;
                   return (
                     <button
-                      className={`mx-auto grid aspect-square w-full max-w-9 place-items-center rounded-full text-xs sm:text-sm ${
+                      className={`mx-auto grid aspect-square w-full max-w-8 sm:max-w-9 place-items-center rounded-full text-xs sm:text-sm ${
                         !day
                           ? "invisible"
                           : date === value
