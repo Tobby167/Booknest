@@ -183,44 +183,7 @@ export default async function AdminPage() {
         </section>
       </div>
 
-      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="font-black text-ink">Recent businesses</h2>
-          <Link className="text-xs font-black text-purple-600" href="/admin/businesses">View all</Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-slate-50 text-xs font-black text-slate-500">
-              <tr>
-                <th className="px-5 py-3">Business</th>
-                <th className="px-5 py-3">Owner</th>
-                <th className="px-5 py-3">Services</th>
-                <th className="px-5 py-3">Contact</th>
-                <th className="px-5 py-3">Public page</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {businessRows.slice(0, 8).map((business) => {
-                const owner = profileRows.find((profile) => profile.id === business.owner_id);
-                return (
-                  <tr key={business.id}>
-                    <td className="px-5 py-4">
-                      <p className="font-black text-ink">{business.name}</p>
-                      <p className="text-xs text-ink/45">/{business.slug}</p>
-                    </td>
-                    <td className="px-5 py-4 text-ink/70">{owner?.email || owner?.full_name || "Unknown"}</td>
-                    <td className="px-5 py-4 font-bold text-ink">{servicesByBusiness.get(business.id) ?? 0}</td>
-                    <td className="px-5 py-4 text-ink/70">{business.email || business.phone || "Missing"}</td>
-                    <td className="px-5 py-4">
-                      <Link className="text-xs font-black text-purple-600" href={`/book/${business.slug}`}>Open</Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+
 
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-5 py-4">

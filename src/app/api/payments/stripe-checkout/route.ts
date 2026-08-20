@@ -13,7 +13,7 @@ type AppointmentForPayment = {
   payment_status: string;
   status: string;
   total_price: number | null;
-  businesses: { name: string; slug: string } | null;
+  businesses: { name: string; slug: string; plan?: string; is_lifetime?: boolean } | null;
   services: { name: string } | null;
   payments: { id: string; amount: number | null; status: string }[];
 };
@@ -40,12 +40,16 @@ export async function POST(request: Request) {
 
   const { data: appointment, error } = await supabase
     .from("appointments")
-    .select("id,business_id,client_email,client_phone,client_name,payment_status,status,total_price,businesses(name,slug),services(name),payments(id,amount,status)")
+    .select("id,business_id,client_email,client_phone,client_name,payment_status,status,total_price,businesses(name,slug,plan,is_lifetime),services(name),payments(id,amount,status)")
     .eq("id", body.appointmentId)
     .maybeSingle<AppointmentForPayment>();
 
   if (error) return safeError();
   if (!appointment) return fail("Appointment not found.", 404);
+
+  if (appointment.businesses?.plan === "starter" && !appointment.businesses?.is_lifetime) {
+    return fail("This business does not support online card payments.", 403);
+  }
 
   const emailMatches =
     appointment.client_email &&
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   const siteUrl = getSiteUrl();
-  const successUrl = `${siteUrl}/book/${appointment.businesses?.slug ?? ""}?payment=success&appointment=${appointment.id}`;
+  const successUrl = `${siteUrl}/book/${appointment.businesses?.slug ?? ""}?payment=success&appointment=${appointment.id}&session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${siteUrl}/book/${appointment.businesses?.slug ?? ""}?payment=cancelled&appointment=${appointment.id}`;
 
   try {

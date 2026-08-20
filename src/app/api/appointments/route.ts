@@ -6,6 +6,8 @@ import { findServiceDiscount } from "@/lib/service-discounts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createAppointmentSchema } from "@/lib/validators";
+import { sendPlatformWhatsAppMessage } from "@/services/notifications/whatsappService";
+import { buildManualMessage } from "@/services/notifications/manualWhatsAppService";
 
 export async function POST(request: Request) {
   const limit = rateLimit(getRequestKey(request, "appointment-create"), 8, 60_000);
@@ -291,6 +293,40 @@ export async function POST(request: Request) {
       };
     }
   }
+
+  // ─── WhatsApp Booking Confirmation (non-blocking) ──────────────────────────
+  const clientPhone = parsed.data.clientPhone;
+  if (clientPhone) {
+    const digits = clientPhone.replace(/[^\d]/g, "");
+    if (digits.length >= 7) {
+      const { data: businessForWA } = await admin
+        .from("businesses")
+        .select("id,name,slug,phone,currency")
+        .eq("id", businessForRules.id)
+        .maybeSingle();
+
+      if (businessForWA) {
+        const waMessage = buildManualMessage("booking_received", {
+          business: businessForWA as any,
+          appointment: {
+            ...booking,
+            client_name: parsed.data.clientName,
+            appointment_date: parsed.data.appointmentDate,
+            start_time: parsed.data.startTime,
+            total_price: booking.total_price ?? selectedTotalPrice
+          } as any,
+          serviceName: selectedService?.name ?? "Service",
+          optionName: selectedOption?.name ?? undefined
+        });
+
+        sendPlatformWhatsAppMessage(digits, waMessage).catch((err) =>
+          console.error("[WhatsApp] booking_received send failed:", err?.message)
+        );
+      }
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   return ok({ booking }, { status: 201 });
 }
 

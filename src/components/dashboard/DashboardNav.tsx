@@ -21,7 +21,8 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
-  Users
+  Users,
+  Lock
 } from "lucide-react";
 
 const groups = [
@@ -89,13 +90,34 @@ const groups = [
   }
 ];
 
-export function DashboardNav() {
+export function DashboardNav({ plan = "starter", isLifetime = false }: { plan?: string; isLifetime?: boolean }) {
   const pathname = usePathname();
   const activeGroupKey = useMemo(() => {
     return groups.find((group) => group.links.some((link) => link.href === pathname))?.key ?? "workspace";
   }, [pathname]);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ [activeGroupKey]: true });
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  function isFeatureLocked(href: string) {
+    if (isLifetime) return false;
+    
+    // Starter locks
+    if (plan === "starter") {
+      if (href === "/dashboard/reminders") return true;
+    }
+    
+    // Starter & Growth locks
+    if (plan === "starter" || plan === "growth") {
+      if (href === "/dashboard/clients" || href === "/dashboard/coupons" || href === "/dashboard/discounts") return true;
+    }
+    
+    // Starter, Growth, & Pro locks
+    if (plan === "starter" || plan === "growth" || plan === "pro") {
+      if (href === "/dashboard/integrations") return true;
+    }
+    
+    return false;
+  }
 
   function toggleGroup(key: string) {
     setOpenGroups((current) => ({ ...current, [key]: !current[key] }));
@@ -125,19 +147,23 @@ export function DashboardNav() {
                   {group.links.map((link) => {
                     const Icon = link.icon;
                     const active = pathname === link.href;
+                    const locked = isFeatureLocked(link.href);
                     return (
                       <Link
-                        className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-black transition ${
+                        className={`flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-black transition ${
                           active ? "bg-purple-500 text-white shadow-sm" : "text-white/62 hover:bg-white/10 hover:text-white"
-                        }`}
-                        href={link.href}
+                        } ${locked ? "opacity-60 grayscale" : ""}`}
+                        href={locked ? "/dashboard/billing" : link.href}
                         key={link.href}
                         onClick={() => {
                           if (mobile) setMobileOpen(false);
                         }}
                       >
-                        <Icon className="h-3.5 w-3.5 text-purple-200" />
-                        <span className="truncate">{link.label}</span>
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <Icon className="h-3.5 w-3.5 shrink-0 text-purple-200" />
+                          <span className="truncate">{link.label}</span>
+                        </div>
+                        {locked && <Lock className="h-3 w-3 shrink-0 text-white/40" />}
                       </Link>
                     );
                   })}

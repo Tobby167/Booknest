@@ -2,7 +2,8 @@
 
 import { CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, Copy, Download, Mail, Printer, Upload } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { getBookingDurationMinutes, getBookingPrice } from "@/lib/booking/availability";
 import { currencyFor, dateLabel, durationLabel, inlinePriceLabel, priceLabel, timeLabel } from "@/lib/format";
@@ -99,6 +100,7 @@ async function readJsonResponse(response: Response) {
 
 export function BookingFlow({ businessSlug, embed = false }: BookingFlowProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [catalog, setCatalog] = useState<BookingCatalog | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -169,6 +171,36 @@ export function BookingFlow({ businessSlug, embed = false }: BookingFlowProps) {
 
     load();
   }, [businessSlug]);
+
+  // ── Auth-state listener ──────────────────────────────────────────────────
+  // Supabase fires onAuthStateChange immediately with the current session on
+  // subscription, so this catches the SIGNED_IN event even when the user
+  // navigated away to /client/login and returned via client-side navigation
+  // (component not remounted, businessSlug useEffect never re-ran).
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        try {
+          const response = await fetch("/api/client/me");
+          const data = await readJsonResponse(response);
+          if (response.ok && data.client) {
+            setClientSession(data.client);
+            setClientName((current) => current || data.client.full_name || "");
+            setClientEmail((current) => current || data.client.email || "");
+          }
+        } catch {
+          // Non-fatal: initial load already attempted /api/client/me
+        }
+      } else if (event === "SIGNED_OUT") {
+        setClientSession(null);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const selectedService = useMemo(
     () => catalog?.services.find((service) => service.id === serviceId) ?? null,
@@ -250,6 +282,68 @@ export function BookingFlow({ businessSlug, embed = false }: BookingFlowProps) {
   const clientReturnPath = pathname || `/book/${businessSlug}`;
   const clientLoginHref = `/client/login?next=${encodeURIComponent(clientReturnPath)}`;
   const clientSignupHref = `/client/signup?next=${encodeURIComponent(clientReturnPath)}`;
+
+  // Derived from the Stripe return URL: /book/[slug]?payment=success&appointment=[id]
+  const paymentResult = searchParams.get("payment");
+  const appointmentIdFromUrl = searchParams.get("appointment");
+  const stripeSessionId = searchParams.get("session_id");
+
+  // ── Stripe return URL handler ─────────────────────────────────────────────
+  // After a successful Stripe checkout, the browser is fully redirected back
+  // to this page with ?payment=success&appointment=[id]. The component remounts
+  // from scratch, so confirmation state is null. This effect fetches the
+  // appointment record and populates the existing confirmation UI.
+  useEffect(() => {
+    if (loading || !catalog || paymentResult !== "success" || !appointmentIdFromUrl) return;
+    let cancelled = false;
+
+    async function fetchStripeConfirmation() {
+      try {
+        const queryParams = new URLSearchParams();
+        if (stripeSessionId) queryParams.set("session_id", stripeSessionId);
+        const response = await fetch(`/api/appointments/${appointmentIdFromUrl}/confirm?${queryParams.toString()}`);
+        const data = await readJsonResponse(response);
+        if (cancelled || !response.ok || !data.appointment) return;
+
+        const apt = data.appointment as {
+          id: string;
+          appointment_date: string;
+          start_time: string;
+          end_time: string;
+          total_price: number | null;
+          status: string;
+          payment_status: string;
+          client_name: string;
+          client_email: string | null;
+          services: { name: string } | null;
+          service_options: { name: string } | null;
+        };
+
+        setConfirmation({
+          appointmentId: apt.id,
+          serviceName: apt.services?.name ?? "Service",
+          optionName: apt.service_options?.name,
+          addonNames: [],
+          appointmentDate: apt.appointment_date,
+          startTime: apt.start_time,
+          endTime: apt.end_time,
+          totalPrice: apt.total_price,
+          status: apt.status,
+          paymentStatus: apt.payment_status,
+          clientName: apt.client_name,
+          clientEmail: apt.client_email ?? undefined
+        });
+      } catch {
+        // Non-fatal: confirmation will not display but booking was recorded
+      }
+    }
+
+    fetchStripeConfirmation();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, catalog, paymentResult, appointmentIdFromUrl]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   function changeCalendarMonth(direction: -1 | 1) {
     const [year, month] = calendarMonth.split("-").map(Number);

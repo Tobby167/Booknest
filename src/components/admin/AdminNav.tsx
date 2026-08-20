@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { Building2, LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
+import { Building2, LayoutDashboard, LogOut, ShieldCheck, Megaphone, Activity, BotMessageSquare, Download } from "lucide-react";
 
 const links = [
   { href: "/admin", label: "Control Center", icon: LayoutDashboard },
-  { href: "/admin/businesses", label: "Businesses", icon: Building2 }
+  { href: "/admin/businesses", label: "Businesses", icon: Building2 },
+  { href: "/admin/broadcasts", label: "Broadcasts", icon: Megaphone },
+  { href: "/admin/activity", label: "Activity Logs", icon: Activity },
+  { href: "/admin/ai-logs", label: "AI Monitoring", icon: BotMessageSquare },
+  { href: "/admin/exports", label: "Data Exports", icon: Download }
 ];
 
 export function AdminNav() {

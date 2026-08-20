@@ -146,6 +146,8 @@ export function OnboardingPanel() {
         </div>
       </section>
 
+      {/* AI SETUP WIDGET REMOVED */}
+
       <section className="grid gap-4 lg:grid-cols-2">
         {steps.map((step) => {
           const Icon = step.icon;

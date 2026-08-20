@@ -69,7 +69,9 @@ export async function GET() {
       qr_url: waQrUrl,
       display_phone: process.env.PLATFORM_WA_DISPLAY_PHONE ?? null
     },
-    telegram: tg ?? null
+    telegram: tg ?? null,
+    plan: biz.plan,
+    is_lifetime: biz.is_lifetime
   });
 }
 

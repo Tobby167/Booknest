@@ -56,7 +56,10 @@ export function AuthCard({
             email,
             password,
             options: {
-              emailRedirectTo: `${getSiteUrl()}${signupRedirectTo ?? (role === "client" ? "/client/login" : "/login")}`,
+              emailRedirectTo:
+                role === "client"
+                  ? `${getSiteUrl()}/client/login?next=${encodeURIComponent(signupRedirectTo ?? redirectTo ?? "/client/bookings")}`
+                  : `${getSiteUrl()}${signupRedirectTo ?? "/login"}`,
               data: { full_name: fullName, role }
             }
           })
@@ -103,7 +106,11 @@ export function AuthCard({
       return;
     }
 
-    router.push(redirectTo);
+    if (profile.role === "admin") {
+      router.push("/admin");
+    } else {
+      router.push(redirectTo);
+    }
     router.refresh();
   }
 

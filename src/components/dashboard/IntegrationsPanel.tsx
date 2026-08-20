@@ -17,7 +17,8 @@ import {
   Wifi,
   WifiOff,
   X,
-  RefreshCw
+  RefreshCw,
+  Lock
 } from "lucide-react";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -593,9 +594,13 @@ export default function IntegrationsPanel() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("channels");
   const [wa, setWa] = useState<WhatsAppStatus>({ platform_available: false, enabled: false, link: null, qr_url: null, display_phone: null });
   const [tg, setTg] = useState<TelegramStatus>(null);
+  const [plan, setPlan] = useState<string>("starter");
+  const [isLifetime, setIsLifetime] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [showTgModal, setShowTgModal] = useState(false);
   const [tgTestResult, setTgTestResult] = useState<string | null>(null);
+
+  const botsLocked = !isLifetime && plan !== "business";
 
   const fetchStatuses = useCallback(async () => {
     setLoading(true);
@@ -605,6 +610,8 @@ export default function IntegrationsPanel() {
       if (res.ok) {
         setWa(data.whatsapp ?? { platform_available: false, enabled: false, link: null, qr_url: null, display_phone: null });
         setTg(data.telegram);
+        setPlan(data.plan || "starter");
+        setIsLifetime(!!data.is_lifetime);
       }
     } finally {
       setLoading(false);
@@ -679,15 +686,29 @@ export default function IntegrationsPanel() {
               <Loader2 className="h-7 w-7 animate-spin text-purple-400" />
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <WhatsAppCard status={wa} onToggle={toggleWhatsApp} />
-              <TelegramCard
-                tg={tg}
-                testResult={tgTestResult}
-                onConnect={() => setShowTgModal(true)}
-                onDisconnect={disconnectTelegram}
-                onTest={testTelegramConnection}
-              />
+            <div className="relative">
+              <div className={`grid gap-4 sm:grid-cols-2 ${botsLocked ? "pointer-events-none select-none blur-sm grayscale opacity-30" : ""}`}>
+                <WhatsAppCard status={wa} onToggle={toggleWhatsApp} />
+                <TelegramCard
+                  tg={tg}
+                  testResult={tgTestResult}
+                  onConnect={() => setShowTgModal(true)}
+                  onDisconnect={disconnectTelegram}
+                  onTest={testTelegramConnection}
+                />
+              </div>
+              {botsLocked && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+                  <div className="rounded-2xl border border-slate-700 bg-slate-900/90 p-6 text-center shadow-xl backdrop-blur-md">
+                    <Lock className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+                    <h3 className="mb-2 text-base font-black text-white">Bots require the Business Plan</h3>
+                    <p className="mb-5 max-w-xs text-xs text-slate-400">Upgrade your plan to unlock the Conversational Booking Engine on WhatsApp and Telegram.</p>
+                    <a href="/dashboard/billing" className="inline-block rounded-lg bg-purple-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition">
+                      Upgrade to Business
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -714,7 +735,22 @@ export default function IntegrationsPanel() {
         </div>
       )}
 
-      {activeTab === "conversations" && <ConversationsPanel />}
+      {activeTab === "conversations" && (
+        botsLocked ? (
+          <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-slate-700 bg-slate-900 py-16 text-center">
+            <Lock className="h-10 w-10 text-slate-600" />
+            <div>
+              <h3 className="font-bold text-white">Conversations Locked</h3>
+              <p className="mt-1 text-xs text-slate-400">Upgrade to the Business plan to chat with customers via bots.</p>
+            </div>
+            <a href="/dashboard/billing" className="mt-2 inline-block rounded-lg bg-purple-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-purple-500 transition">
+              Upgrade to Business
+            </a>
+          </div>
+        ) : (
+          <ConversationsPanel />
+        )
+      )}
 
       {showTgModal && (
         <ConnectTelegramModal

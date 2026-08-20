@@ -11,6 +11,19 @@ export async function POST(request: Request) {
   const ownership = await requireOwnedBusiness(supabase, parsed.data.business_id);
   if (ownership.response) return ownership.response;
 
+  // Enforce Starter plan service limit (max 3)
+  if (ownership.business.plan === "starter" && !ownership.business.is_lifetime) {
+    const { count, error: countError } = await supabase
+      .from("services")
+      .select("*", { count: "exact", head: true })
+      .eq("business_id", ownership.business.id);
+
+    if (countError) return fail("Failed to verify service limits.", 500);
+    if ((count || 0) >= 3) {
+      return fail("Starter plan allows a maximum of 3 services. Please upgrade your plan to add more.", 403);
+    }
+  }
+
   if (parsed.data.category_id) {
     const { data: category, error: categoryError } = await supabase
       .from("service_categories")

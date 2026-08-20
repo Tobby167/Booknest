@@ -37,6 +37,13 @@ export type Business = {
   booking_notice_hours?: number;
   max_advance_booking_days?: number;
   default_buffer_after_minutes?: number;
+  plan?: "starter" | "growth" | "pro" | "business";
+  trial_ends_at?: string | null;
+  subscription_status?: string | null;
+  is_lifetime?: boolean;
+  subscription_id?: string | null;
+  stripe_customer_id?: string | null;
+  paystack_customer_code?: string | null;
 };
 
 export type ServiceCategory = {

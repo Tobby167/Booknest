@@ -54,9 +54,10 @@ export default async function AdminBusinessesPage() {
                     <td className="px-5 py-4">{availabilityByBusiness.get(business.id) ? "Open days set" : "Missing"}</td>
                     <td className="px-5 py-4">{hasPaymentDetails ? "Manual payment ready" : "Missing"}</td>
                     <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <Link className="text-xs font-black text-purple-600" href={`/book/${business.slug}`}>Booking</Link>
-                        <Link className="text-xs font-black text-purple-600" href={`/embed/${business.slug}`}>Embed</Link>
+                      <div className="flex flex-wrap gap-3">
+                        <Link className="text-xs font-black text-purple-600 hover:text-purple-800" href={`/admin/businesses/${business.id}`}>Manage</Link>
+                        <Link className="text-xs font-black text-slate-600 hover:text-slate-800" href={`/book/${business.slug}`}>Booking</Link>
+                        <Link className="text-xs font-black text-slate-600 hover:text-slate-800" href={`/embed/${business.slug}`}>Embed</Link>
                       </div>
                     </td>
                   </tr>
