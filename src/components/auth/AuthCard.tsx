@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { ChevronLeft } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getSiteUrl } from "@/lib/env";
 
@@ -44,6 +45,35 @@ export function AuthCard({
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [logoHref, setLogoHref] = useState("/");
+
+  useEffect(() => {
+    async function determineLogoHref() {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setLogoHref("/");
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.role === "admin") {
+        setLogoHref("/admin");
+      } else if (profile?.role === "client") {
+        setLogoHref("/client/bookings");
+      } else if (profile?.role) {
+        setLogoHref("/dashboard");
+      } else {
+        setLogoHref("/");
+      }
+    }
+    determineLogoHref();
+  }, [supabase]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -114,46 +144,65 @@ export function AuthCard({
     router.refresh();
   }
 
+  const isBookingPath = redirectTo?.startsWith("/book/") || signupRedirectTo?.startsWith("/book/");
+
   return (
-    <div className="card mx-auto w-full max-w-md p-6">
-      <h1 className="text-2xl font-black text-ink">{title ?? (mode === "signup" ? "Create BookNest account" : "Login to BookNest")}</h1>
-      <p className="mt-2 text-sm leading-6 text-ink/65">
-        {description ?? "Supabase Auth handles email confirmation, password reset, and session management."}
-      </p>
-      <form className="mt-6 grid gap-4" onSubmit={submit}>
-        {mode === "signup" ? (
-          <label>
-            <span className="label">Full name</span>
-            <input className="input focus-ring" value={fullName} onChange={(event) => setFullName(event.target.value)} required />
-          </label>
-        ) : null}
-        <label>
-          <span className="label">Email</span>
-          <input className="input focus-ring" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        </label>
-        <label>
-          <span className="label">Password</span>
-          <input
-            className="input focus-ring"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            minLength={6}
-            required
-          />
-        </label>
-        <button className="btn btn-primary" disabled={busy}>
-          {busy ? "Please wait..." : mode === "signup" ? "Sign up" : "Login"}
-        </button>
-      </form>
-      {message ? <p className="mt-4 rounded-lg bg-blush/60 p-3 text-sm font-bold text-ink">{message}</p> : null}
-      <div className="mt-5 flex flex-wrap justify-between gap-3 text-sm font-bold">
-        {mode === "signup" ? (
-          <Link href={loginHref ?? (role === "client" ? "/client/login" : "/login")}>Already have an account?</Link>
-        ) : (
-          <Link href={createAccountHref ?? (role === "client" ? "/client/signup" : "/signup")}>Create account</Link>
+    <div className="mx-auto w-full max-w-md">
+      <div className="mb-6 flex flex-col items-center gap-4 text-center">
+        <Link href={logoHref} className="transition hover:opacity-80">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt="BookNest" className="h-10 w-auto" src="/booknest-logo.svg" />
+        </Link>
+        {isBookingPath && (
+          <Link
+            href={redirectTo ?? signupRedirectTo ?? "/"}
+            className="flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.14em] text-purple-600 hover:text-purple-950 transition"
+          >
+            <ChevronLeft className="h-4 w-4" /> Back to booking
+          </Link>
         )}
-        <Link href="/forgot-password">Forgot password?</Link>
+      </div>
+
+      <div className="card p-6">
+        <h1 className="text-2xl font-black text-ink">{title ?? (mode === "signup" ? "Create BookNest account" : "Login to BookNest")}</h1>
+        <p className="mt-2 text-sm leading-6 text-ink/65">
+          {description ?? "Supabase Auth handles email confirmation, password reset, and session management."}
+        </p>
+        <form className="mt-6 grid gap-4" onSubmit={submit}>
+          {mode === "signup" ? (
+            <label>
+              <span className="label">Full name</span>
+              <input className="input focus-ring" value={fullName} onChange={(event) => setFullName(event.target.value)} required />
+            </label>
+          ) : null}
+          <label>
+            <span className="label">Email</span>
+            <input className="input focus-ring" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          </label>
+          <label>
+            <span className="label">Password</span>
+            <input
+              className="input focus-ring"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength={6}
+              required
+            />
+          </label>
+          <button className="btn btn-primary" disabled={busy}>
+            {busy ? "Please wait..." : mode === "signup" ? "Sign up" : "Login"}
+          </button>
+        </form>
+        {message ? <p className="mt-4 rounded-lg bg-blush/60 p-3 text-sm font-bold text-ink">{message}</p> : null}
+        <div className="mt-5 flex flex-wrap justify-between gap-3 text-sm font-bold">
+          {mode === "signup" ? (
+            <Link href={loginHref ?? (role === "client" ? "/client/login" : "/login")}>Already have an account?</Link>
+          ) : (
+            <Link href={createAccountHref ?? (role === "client" ? "/client/signup" : "/signup")}>Create account</Link>
+          )}
+          <Link href="/forgot-password">Forgot password?</Link>
+        </div>
       </div>
     </div>
   );

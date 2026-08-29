@@ -1,17 +1,21 @@
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AILogViewer } from "@/components/admin/AILogViewer";
 
 export const revalidate = 0; // Ensure live data always shows
 
 export default async function AdminAILogsPage() {
-  // Use admin client to bypass RLS since businesses own the conversations
-  const adminClient = createSupabaseAdminClient();
-  
-  const { data: conversations } = await adminClient
+  // Use regular server client — admin RLS policy allows admin-role users to read
+  const supabase = await createSupabaseServerClient();
+
+  const { data: conversations, error } = await supabase
     .from("chat_conversations")
     .select("*, business:businesses(name, slug)")
     .order("last_message_at", { ascending: false })
     .limit(50);
+
+  if (error) {
+    console.error("AI Logs query error:", error.message);
+  }
 
   return (
     <div className="space-y-5">

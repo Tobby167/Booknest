@@ -11,6 +11,8 @@ type PaymentRow = {
   status: string;
   receipt_image_url: string | null;
   created_at: string;
+  ai_status?: string | null;
+  ai_report?: any | null;
   appointments?: {
     client_name: string;
     client_email: string | null;
@@ -36,6 +38,38 @@ export function PaymentsPanel() {
   const [date, setDate] = useState("");
   const [selectedPayment, setSelectedPayment] = useState<PaymentRow | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [isRechecking, setIsRechecking] = useState<string | null>(null);
+
+  async function runAiCheck(id: string) {
+    setIsRechecking(id);
+    setPayments(prev => prev.map(p => p.id === id ? { ...p, ai_status: "checking" } : p));
+    if (selectedPayment?.id === id) {
+      setSelectedPayment(prev => prev ? { ...prev, ai_status: "checking", ai_report: null } : null);
+    }
+
+    try {
+      const res = await fetch(`/api/payments/${id}/verify-ai`, {
+        method: "POST"
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPayments(prev => prev.map(p => p.id === id ? { ...p, ai_status: data.ai_status, ai_report: data.ai_report } : p));
+        if (selectedPayment?.id === id) {
+          setSelectedPayment(prev => prev ? { ...prev, ai_status: data.ai_status, ai_report: data.ai_report } : null);
+        }
+        setMessage("AI receipt audit completed.");
+      } else {
+        setMessage(data.error || "AI check failed.");
+        load();
+      }
+    } catch (err) {
+      console.error("AI check error:", err);
+      setMessage("Network error running AI check.");
+      load();
+    } finally {
+      setIsRechecking(null);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -125,17 +159,36 @@ export function PaymentsPanel() {
                   <td className="px-4 py-4 font-black text-ink" data-label="Amount">{currency(payment.amount)}</td>
                   <td className="px-4 py-4 text-slate-600" data-label="Method">Bank Transfer</td>
                   <td className="px-4 py-4" data-label="Status">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-black capitalize ${
-                        payment.status === "confirmed"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : payment.status === "rejected"
-                            ? "bg-rose-50 text-rose-600"
-                            : "bg-amber-50 text-amber-600"
-                      }`}
-                    >
-                      {payment.status.replaceAll("_", " ")}
-                    </span>
+                    <div className="flex flex-col gap-1.5 items-start">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-black capitalize ${
+                          payment.status === "confirmed"
+                            ? "bg-emerald-50 text-emerald-600"
+                            : payment.status === "rejected"
+                              ? "bg-rose-50 text-rose-600"
+                              : "bg-amber-50 text-amber-600"
+                        }`}
+                      >
+                        {payment.status.replaceAll("_", " ")}
+                      </span>
+                      {payment.receipt_image_url && payment.ai_status && (
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${
+                            payment.ai_status === "verified"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : payment.ai_status === "flagged"
+                                ? "bg-rose-100 text-rose-800 animate-pulse"
+                                : payment.ai_status === "checking"
+                                  ? "bg-amber-100 text-amber-800 animate-pulse"
+                                  : payment.ai_status === "failed"
+                                    ? "bg-slate-100 text-slate-700"
+                                    : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          🤖 AI {payment.ai_status}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-4" data-label="Receipt">
                     {payment.receipt_image_url ? (
@@ -198,6 +251,121 @@ export function PaymentsPanel() {
                 <ExternalLink className="h-3.5 w-3.5" /> Open full receipt
               </a>
             ) : null}
+
+            {/* AI Receipt Audit Section */}
+            {selectedPayment.receipt_image_url && (
+              <div className="mt-4 rounded-xl border border-purple-200 bg-purple-50/20 p-4 text-sm">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-black text-purple-900 flex items-center gap-1">
+                    🤖 AI Audit Report
+                  </h4>
+                  <span
+                    className={`rounded px-2 py-0.5 text-[9px] font-black uppercase ${
+                      selectedPayment.ai_status === "verified"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : selectedPayment.ai_status === "flagged"
+                          ? "bg-rose-100 text-rose-800"
+                          : selectedPayment.ai_status === "checking"
+                            ? "bg-amber-100 text-amber-800 animate-pulse"
+                            : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {selectedPayment.ai_status || "Unchecked"}
+                  </span>
+                </div>
+
+                {selectedPayment.ai_status === "checking" && (
+                  <p className="mt-2 text-xs text-purple-700 animate-pulse font-semibold">
+                    Qwen Vision model is currently auditing this receipt...
+                  </p>
+                )}
+
+                {selectedPayment.ai_report?.extracted && (
+                  <div className="mt-3 space-y-2 text-xs border-t border-purple-100/50 pt-3">
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-purple-950/80">
+                      <div><strong>Extracted Amount:</strong></div>
+                      <div className="font-bold">
+                        {selectedPayment.ai_report.extracted.amount 
+                          ? currency(selectedPayment.ai_report.extracted.amount) 
+                          : "Not found"}
+                      </div>
+                      
+                      <div><strong>Transaction Ref:</strong></div>
+                      <div className="font-bold truncate" title={selectedPayment.ai_report.extracted.transactionRef}>
+                        {selectedPayment.ai_report.extracted.transactionRef || "Not found"}
+                      </div>
+
+                      <div><strong>Recipient Info:</strong></div>
+                      <div className="truncate" title={selectedPayment.ai_report.extracted.recipient}>
+                        {selectedPayment.ai_report.extracted.recipient || "Not found"}
+                      </div>
+
+                      <div><strong>Sender/Bank:</strong></div>
+                      <div className="truncate">
+                        {[selectedPayment.ai_report.extracted.sender, selectedPayment.ai_report.extracted.bank].filter(Boolean).join(" / ") || "Not found"}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 space-y-1.5 border-t border-purple-100/30 pt-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                        {selectedPayment.ai_report.checks?.amountMatches ? (
+                          <span className="text-emerald-600">✅ Amount Matches</span>
+                        ) : (
+                          <span className="text-rose-600 font-extrabold">❌ Amount Mismatch (Expected {currency(selectedPayment.amount)})</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                        {selectedPayment.ai_report.checks?.referenceIsUnique ? (
+                          <span className="text-emerald-600">✅ Unique Reference</span>
+                        ) : (
+                          <span className="text-rose-600 font-extrabold">❌ Duplicate Reference Found</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                        {selectedPayment.ai_report.checks?.recipientMatches ? (
+                          <span className="text-emerald-600">✅ Recipient Matches Settings</span>
+                        ) : (
+                          <span className="text-rose-600 font-extrabold">❌ Recipient Mismatch</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                        {selectedPayment.ai_report.checks?.noTampering ? (
+                          <span className="text-emerald-600">✅ No Tampering Detected</span>
+                        ) : (
+                          <span className="text-rose-600 font-extrabold">❌ Suspected Tampering</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {selectedPayment.ai_report.extracted.notes && (
+                      <p className="mt-2 bg-purple-100/30 p-2 rounded text-[11px] text-purple-900 leading-normal">
+                        <strong>AI Notes:</strong> {selectedPayment.ai_report.extracted.notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {selectedPayment.ai_status === "failed" && selectedPayment.ai_report?.error && (
+                  <div className="mt-2 text-xs text-rose-700 bg-rose-50 p-2 rounded border border-rose-100">
+                    <strong>Error:</strong> {selectedPayment.ai_report.error}
+                  </div>
+                )}
+
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    disabled={isRechecking === selectedPayment.id}
+                    onClick={() => runAiCheck(selectedPayment.id)}
+                    className="text-[10px] font-bold uppercase text-purple-700 hover:text-purple-900 flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {isRechecking === selectedPayment.id ? "Auditing..." : "🔄 Run AI Check"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-ink/45">Expected amount</p>

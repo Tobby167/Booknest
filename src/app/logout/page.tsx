@@ -13,10 +13,10 @@ export default function LogoutPage() {
       const params = new URLSearchParams(window.location.search);
       const next = params.get("next");
       const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/login";
-      router.replace(safeNext);
-      router.refresh();
+      // Hard redirect: ensures cookie is fully cleared before next page renders
+      window.location.href = safeNext;
     });
-  }, [router]);
+  }, []);
 
   return (
     <main className="grid min-h-screen place-items-center px-5 py-10">

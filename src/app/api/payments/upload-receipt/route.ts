@@ -2,6 +2,7 @@ import { fail, ok, safeError } from "@/lib/api";
 import { getRequestKey, rateLimit } from "@/lib/rate-limit";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { verifyPaymentReceipt } from "@/services/ai/paymentVerifier";
 
 const allowedTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 const maxBytes = 5 * 1024 * 1024;
@@ -69,6 +70,22 @@ export async function POST(request: Request) {
       p_receipt_image_url: receiptUrl
     });
     if (error) return safeError();
+
+    // Trigger AI Payment Verification Agent asynchronously
+    try {
+      const { data: payment } = await admin
+        .from("payments")
+        .select("id")
+        .eq("appointment_id", appointmentId)
+        .maybeSingle();
+      if (payment) {
+        verifyPaymentReceipt(payment.id).catch(err => {
+          console.error("AI receipt verification failed in background:", err);
+        });
+      }
+    } catch (e) {
+      console.error("Failed to trigger AI verifier:", e);
+    }
   }
 
   return ok({ receiptUrl, objectPath });

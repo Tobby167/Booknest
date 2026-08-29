@@ -12,7 +12,7 @@ export type WhatsAppIntegrationRow = {
   display_phone: string | null;
 };
 
-const WA_BASE = "https://graph.facebook.com/v19.0";
+const WA_BASE = "https://graph.facebook.com/v21.0";
 
 /**
  * Send a plain-text WhatsApp message via the Business Cloud API.

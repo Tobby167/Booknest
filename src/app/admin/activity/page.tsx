@@ -15,11 +15,15 @@ export const revalidate = 0; // Force dynamic to always show live feed
 export default async function AdminActivityPage() {
   const supabase = await createSupabaseServerClient();
 
-  const { data: logs } = await supabase
+  const { data: logs, error: logsError } = await supabase
     .from("audit_logs")
-    .select("*, business:businesses(name, slug)")
+    .select("id, business_id, event_type, message, created_at, business:businesses(name, slug)")
     .order("created_at", { ascending: false })
     .limit(50);
+
+  if (logsError) {
+    console.error("Activity logs query error:", logsError.message);
+  }
 
   function getEventIcon(type: string) {
     if (type === "business_created") return <Building2 className="h-5 w-5 text-purple-600" />;

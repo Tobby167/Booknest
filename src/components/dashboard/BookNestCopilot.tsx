@@ -1,14 +1,54 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useChat } from "ai/react";
 import { Bot, Mic, X, Send, Square, Loader2 } from "lucide-react";
 
 export function BookNestCopilot() {
   const [isOpen, setIsOpen] = useState(false);
-  const { messages, input, handleInputChange, handleSubmit, append, isLoading } = useChat({
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    append,
+    isLoading,
+    error,
+  } = useChat({
     api: "/api/ai/copilot",
+    onError: (err) => {
+      console.error("BookNest Copilot Error:", err);
+    },
   });
+
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef(true); // tracks whether we should auto-scroll
+
+  // Detect if user scrolled up manually — pause auto-scroll
+  const handleScroll = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    // If within 80px of bottom → resume auto-scroll, else pause it
+    autoScrollRef.current = distanceFromBottom < 80;
+  };
+
+  // Follow the stream as it types — runs on every messages update
+  useEffect(() => {
+    if (!autoScrollRef.current) return;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Always scroll when loading starts (new message sent)
+  useEffect(() => {
+    if (isLoading) {
+      autoScrollRef.current = true;
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [isLoading]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -57,7 +97,7 @@ export function BookNestCopilot() {
         body: formData,
       });
       const data = await res.json();
-      
+
       if (data.text) {
         // Automatically send the transcribed text as a message
         append({
@@ -92,23 +132,28 @@ export function BookNestCopilot() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div
+            ref={messagesContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto p-4 space-y-4"
+          >
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center space-y-3">
                 <Bot className="w-12 h-12 text-gray-600" />
-                <p className="text-gray-400 text-sm">Hi! I am your AI Business Consultant. Tell me what business you run to get started!</p>
+                <p className="text-gray-400 text-sm">Hi! I am your AI Business Assistant. Ask me anything about your business!</p>
               </div>
             )}
-            
+
             {messages.map((m) => (
               <div key={m.id} className={"flex " + (m.role === "user" ? "justify-end" : "justify-start")}>
-                <div className={"max-w-[85%] rounded-2xl px-4 py-2 text-sm " + 
+                <div className={"max-w-[85%] rounded-2xl px-4 py-2 text-sm " +
                   (m.role === "user" ? "bg-indigo-600 text-white" : "bg-gray-800 text-gray-200 border border-gray-700")
                 }>
                   {m.content}
                 </div>
               </div>
             ))}
+
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-gray-800 text-gray-400 border border-gray-700 rounded-2xl px-4 py-2 text-sm flex items-center space-x-2">
@@ -126,11 +171,28 @@ export function BookNestCopilot() {
                 </div>
               </div>
             )}
+            {error && (
+              <div className="flex justify-center my-2">
+                <div className="bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl px-3 py-1.5 text-xs">
+                  Something went wrong. Please try again.
+                </div>
+              </div>
+            )}
+
+            {/* Scroll anchor */}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
           <div className="p-4 bg-gray-800/50 border-t border-gray-800">
-            <form onSubmit={handleSubmit} className="flex items-center space-x-2 bg-gray-900 border border-gray-700 rounded-full pl-4 pr-1 py-1">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!input.trim() || isLoading) return;
+                handleSubmit(e);
+              }}
+              className="flex items-center space-x-2 bg-gray-900 border border-gray-700 rounded-full pl-4 pr-1 py-1"
+            >
               <input
                 value={input}
                 onChange={handleInputChange}
