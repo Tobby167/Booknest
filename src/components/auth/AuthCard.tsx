@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { getSiteUrl } from "@/lib/env";
 
@@ -46,6 +46,7 @@ export function AuthCard({
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [logoHref, setLogoHref] = useState("/");
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     async function determineLogoHref() {
@@ -181,14 +182,24 @@ export function AuthCard({
           </label>
           <label>
             <span className="label">Password</span>
-            <input
-              className="input focus-ring"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              minLength={6}
-              required
-            />
+            <div className="relative">
+              <input
+                className="input focus-ring pr-10"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                minLength={6}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink/40 hover:text-ink/70 transition"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </label>
           <button className="btn btn-primary" disabled={busy}>
             {busy ? "Please wait..." : mode === "signup" ? "Sign up" : "Login"}
