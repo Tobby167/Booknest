@@ -250,9 +250,9 @@ export default async function DashboardPage() {
 
         <div className="space-y-5">
           <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-1">
               <h2 className="font-black text-ink">Bookings Overview</h2>
-              <span className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-black text-ink/55">This Week</span>
+              <span className="text-xs font-bold text-ink/45">This Week</span>
             </div>
             <div className="mt-4 overflow-hidden rounded-xl bg-gradient-to-b from-purple-50/70 to-white">
               <svg aria-label="Weekly bookings chart" className="h-56 w-full" viewBox="0 0 520 220" preserveAspectRatio="xMidYMid meet" role="img">
