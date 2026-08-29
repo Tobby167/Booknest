@@ -255,7 +255,7 @@ export default async function DashboardPage() {
               <span className="text-xs font-bold text-ink/45">This Week</span>
             </div>
             <div className="mt-4 overflow-hidden rounded-xl bg-gradient-to-b from-purple-50/70 to-white">
-              <svg aria-label="Weekly bookings chart" className="h-56 w-full" viewBox="0 0 520 220" preserveAspectRatio="xMidYMid meet" role="img">
+              <svg aria-label="Weekly bookings chart" className="w-full h-auto" viewBox="0 0 520 230" role="img">
                 <defs>
                   <linearGradient id="bookingsFill" x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.28" />
