@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BookingFlow } from "@/components/booking/BookingFlow";
+import { BookingAgentWidget } from "@/components/booking/BookingAgentWidget";
 import { getSiteUrl } from "@/lib/env";
 import { durationLabel, priceLabel } from "@/lib/format";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -285,6 +286,8 @@ export default async function PublicBookingPage({ params }: PageProps) {
           <BookingFlow businessSlug={businessSlug} />
         </div>
       </section>
+
+      <BookingAgentWidget businessSlug={businessSlug} businessName={business?.name ?? "BookNest"} currency={currencyCode} />
     </main>
   );
 }
