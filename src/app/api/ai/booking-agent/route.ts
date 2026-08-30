@@ -81,14 +81,14 @@ Strict Rules:
 
           return {
             currency: currencyCode,
-            services: services.map((s) => ({
+            services: services.map((s: any) => ({
               id: s.id,
               name: s.name,
               description: s.description ?? "",
               price: s.base_price ?? 0,
               priceType: s.price_type,
               durationMinutes: s.duration_minutes ?? 60,
-              category: categories.find((c) => c.id === s.category_id)?.name ?? "General",
+              category: categories.find((c: any) => c.id === s.category_id)?.name ?? "General",
             })),
           };
         } catch (err: any) {
@@ -199,22 +199,8 @@ Strict Rules:
           // Attempt notification dispatch if configured
           try {
             if (args.clientPhone) {
-              await sendPlatformWhatsAppMessage({
-                businessId: business.id,
-                recipientPhone: args.clientPhone,
-                clientName: args.clientName,
-                serviceName: booking.service_name || "Appointment",
-                appointmentDate: args.appointmentDate,
-                startTime: args.startTime,
-                manualBody: buildManualMessage("booked", {
-                  clientName: args.clientName,
-                  businessName: business.name,
-                  serviceName: booking.service_name || "Appointment",
-                  date: args.appointmentDate,
-                  time: args.startTime,
-                  portalUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://booknest-ashy.vercel.app"}/book/${businessSlug}`,
-                }),
-              });
+              const msg = `Hi ${args.clientName}, your appointment for ${booking.service_name || "your appointment"} at ${business.name} is reserved for ${args.appointmentDate} at ${args.startTime}.`;
+              await sendPlatformWhatsAppMessage(args.clientPhone, msg);
             }
           } catch (notifyErr) {
             console.warn("[BookingAgent] WhatsApp notify error (ignored):", notifyErr);
