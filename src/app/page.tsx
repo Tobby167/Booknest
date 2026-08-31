@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, LayoutDashboard, MonitorSmartphone } from "lucide-react";
+import { PwaInstallButton } from "@/components/PwaInstallButton";
 
 export default function HomePage() {
   const features = [
@@ -12,8 +13,11 @@ export default function HomePage() {
     <main className="min-h-screen">
       <section className="mx-auto grid min-h-screen max-w-6xl items-center gap-8 px-5 py-10 lg:grid-cols-[1.05fr_0.95fr]">
         <div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img alt="BookNest" className="mb-8 h-16 w-auto" src="/booknest-logo.svg" />
+          <div className="mb-8 flex items-start justify-between gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img alt="BookNest" className="h-16 w-auto" src="/booknest-logo.svg" />
+            <PwaInstallButton />
+          </div>
           <p className="mb-3 text-sm font-black uppercase tracking-[0.18em] text-fern">BookNest Booking Platform</p>
           <h1 className="text-4xl font-black leading-tight text-ink sm:text-5xl">
             Booking, receipts, reminders, and embeds for service businesses.
