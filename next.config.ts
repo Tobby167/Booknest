@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
         headers: shared
       },
       {
+        source: "/sw.js",
+        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }]
+      },
+      {
         source: "/dashboard/:path*",
         headers: protectedFrameHeaders
       },
