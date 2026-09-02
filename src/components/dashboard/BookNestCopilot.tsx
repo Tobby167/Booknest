@@ -145,6 +145,10 @@ export function BookNestCopilot() {
       });
       const data = await res.json();
 
+      if (!res.ok) {
+        throw new Error(data.error || "Could not turn that recording into text.");
+      }
+
       if (data.text) {
         // Automatically send the transcribed text as a message
         append({
@@ -154,7 +158,7 @@ export function BookNestCopilot() {
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to transcribe audio.");
+      alert(err instanceof Error ? err.message : "Failed to transcribe audio.");
     } finally {
       setIsTranscribing(false);
     }

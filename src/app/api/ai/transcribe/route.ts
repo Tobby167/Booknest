@@ -4,7 +4,7 @@ import OpenAI from "openai";
 export const runtime = "nodejs";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "", 
+  apiKey: process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || "",
   baseURL: "https://api.groq.com/openai/v1"
 });
 
@@ -17,8 +17,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Please provide an audio file." }, { status: 400 });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ error: "API Key is not configured." }, { status: 500 });
+    if (!process.env.GROQ_API_KEY && !process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: "Speech-to-text is not configured yet." }, { status: 503 });
     }
 
     const file = new File([audioFile], "recording.webm", { type: "audio/webm" });
@@ -27,7 +27,12 @@ export async function POST(req: Request) {
       model: "whisper-large-v3",
     });
 
-    return NextResponse.json({ text: transcription.text });
+    const text = transcription.text?.trim();
+    if (!text) {
+      return NextResponse.json({ error: "I could not hear any speech. Please try again." }, { status: 422 });
+    }
+
+    return NextResponse.json({ text });
   } catch (error: any) {
     console.error("Transcription Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
