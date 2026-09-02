@@ -1,8 +1,55 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { type ReactNode, useState, useRef, useEffect } from "react";
 import { useChat } from "ai/react";
 import { Bot, Mic, X, Send, Square, Loader2 } from "lucide-react";
+
+function formatInline(text: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index} className="font-bold text-white">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
+function CopilotMessage({ content }: { content: string }) {
+  return (
+    <div className="space-y-2 break-words">
+      {content.split("\n").map((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={index} className="h-1" aria-hidden="true" />;
+
+        const heading = trimmed.match(/^#{1,3}\s+(.+)$/);
+        if (heading) {
+          return <p key={index} className="pt-1 font-semibold text-white">{formatInline(heading[1])}</p>;
+        }
+
+        const bullet = trimmed.match(/^[-*]\s+(.+)$/);
+        if (bullet) {
+          return (
+            <div key={index} className="flex gap-2 pl-1">
+              <span className="text-indigo-300" aria-hidden="true">•</span>
+              <span>{formatInline(bullet[1])}</span>
+            </div>
+          );
+        }
+
+        const numbered = trimmed.match(/^(\d+)\.\s+(.+)$/);
+        if (numbered) {
+          return (
+            <div key={index} className="flex gap-2 pl-1">
+              <span className="font-semibold text-indigo-300">{numbered[1]}.</span>
+              <span>{formatInline(numbered[2])}</span>
+            </div>
+          );
+        }
+
+        return <p key={index}>{formatInline(trimmed)}</p>;
+      })}
+    </div>
+  );
+}
 
 export function BookNestCopilot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -149,7 +196,7 @@ export function BookNestCopilot() {
                 <div className={"max-w-[85%] rounded-2xl px-4 py-2 text-sm " +
                   (m.role === "user" ? "bg-indigo-600 text-white" : "bg-gray-800 text-gray-200 border border-gray-700")
                 }>
-                  {m.content}
+                  <CopilotMessage content={m.content} />
                 </div>
               </div>
             ))}
