@@ -29,11 +29,24 @@ export function usePushNotifications() {
       return;
     }
 
+    // Timeout fallback — if SW takes >4s to be ready, show the banner anyway
+    const timeout = setTimeout(() => {
+      setState((prev) => (prev === "loading" ? "unsubscribed" : prev));
+    }, 4000);
+
     // Check if already subscribed
-    navigator.serviceWorker.ready.then(async (reg) => {
-      const sub = await reg.pushManager.getSubscription();
-      setState(sub ? "subscribed" : "unsubscribed");
-    });
+    navigator.serviceWorker.ready
+      .then(async (reg) => {
+        clearTimeout(timeout);
+        const sub = await reg.pushManager.getSubscription();
+        setState(sub ? "subscribed" : "unsubscribed");
+      })
+      .catch(() => {
+        clearTimeout(timeout);
+        setState("unsubscribed");
+      });
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const subscribe = async () => {
