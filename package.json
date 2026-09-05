@@ -14,14 +14,12 @@
     "@ai-sdk/react": "^4.0.3",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.48.1",
-    "@types/web-push": "^3.6.4",
     "ai": "^4.3.19",
     "lucide-react": "^0.468.0",
     "next": "^16.0.0",
     "openai": "^4.86.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "web-push": "^3.6.7",
     "zod": "^3.24.1"
   },
   "devDependencies": {
