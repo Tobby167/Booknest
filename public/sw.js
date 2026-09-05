@@ -19,10 +19,10 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(fetch(event.request).catch(() => caches.match("/offline")));
 });
 
-// ΓöÇΓöÇΓöÇ Push Notification Handler (Native Phone Lock-Screen Alerts) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// --- Push Notification Handler (Native Phone Lock-Screen Alerts) ---
 self.addEventListener("push", (event) => {
   let data = {
-    title: "≡ƒöö BookNest Alert",
+    title: "BookNest Alert",
     body: "You have a new update in BookNest.",
     url: "/dashboard/appointments",
     icon: "/pwa-icon.svg",
@@ -57,7 +57,7 @@ self.addEventListener("push", (event) => {
   event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
-// ΓöÇΓöÇΓöÇ Notification Click Handler ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// --- Notification Click Handler ---
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 

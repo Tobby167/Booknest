@@ -20,66 +20,96 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+
+    // Must check for all required Web Push APIs safely
+    if (
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window) ||
+      !("Notification" in window)
+    ) {
       setState("unsupported");
       return;
     }
+
     if (Notification.permission === "denied") {
       setState("denied");
       return;
     }
 
-    // Check if already subscribed
-    navigator.serviceWorker.ready.then(async (reg) => {
-      const sub = await reg.pushManager.getSubscription();
-      setState(sub ? "subscribed" : "unsubscribed");
-    });
+    // Safety timeout: if serviceWorker.ready takes too long (or never resolves),
+    // default to unsubscribed so the UI is not permanently hidden
+    const timeout = setTimeout(() => {
+      setState((prev) => (prev === "loading" ? "unsubscribed" : prev));
+    }, 2500);
+
+    navigator.serviceWorker.ready
+      .then(async (reg) => {
+        clearTimeout(timeout);
+        try {
+          const sub = await reg.pushManager.getSubscription();
+          setState(sub ? "subscribed" : "unsubscribed");
+        } catch {
+          setState("unsubscribed");
+        }
+      })
+      .catch(() => {
+        clearTimeout(timeout);
+        setState("unsubscribed");
+      });
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const subscribe = async () => {
     setError(null);
     setState("loading");
     try {
-      // Ask notification permission
+      if (!("Notification" in window)) {
+        setState("unsupported");
+        return;
+      }
+
+      // 1. Request user permission
       const perm = await Notification.requestPermission();
       if (perm !== "granted") {
         setState("denied");
         return;
       }
 
-      // Fetch VAPID public key
+      // 2. Fetch VAPID public key
       const res = await fetch("/api/push-subscription");
-      const data = await res.json();
-      
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok || !data.publicKey) {
         throw new Error(data.error || "Missing VAPID public key from server.");
       }
 
       const { publicKey } = data;
 
-      // Ensure service worker is registered and ready
+      // 3. Ensure service worker is registered
       let reg = await navigator.serviceWorker.getRegistration();
       if (!reg) {
         reg = await navigator.serviceWorker.register("/sw.js");
       }
       await navigator.serviceWorker.ready;
 
-      // If an existing subscription exists (e.g. from an old or invalid key), clean it first
+      // 4. Clear any stale subscription
       const existingSub = await reg.pushManager.getSubscription();
       if (existingSub) {
         try {
           await existingSub.unsubscribe();
         } catch (e) {
-          console.warn("[Push] Unsubscribe stale subscription failed:", e);
+          console.warn("[Push] Unsubscribe stale failed:", e);
         }
       }
 
+      // 5. Subscribe with VAPID key
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey) as any,
       });
 
-      // Save to server
+      // 6. Save to database
       const saveRes = await fetch("/api/push-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,8 +118,9 @@ export function usePushNotifications() {
 
       const saveJson = await saveRes.json().catch(() => ({}));
       if (!saveRes.ok) {
-        throw new Error(saveJson.error || "Failed to save subscription in database. Ensure you ran the SQL setup in Supabase.");
+        throw new Error(saveJson.error || "Failed to save subscription in database.");
       }
+
       setState("subscribed");
     } catch (err: any) {
       console.error("[Push] subscribe error:", err);
@@ -126,14 +157,13 @@ export function usePushNotifications() {
       const res = await fetch("/api/push-subscription/test", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg = data.error || `Server error (${res.status}). Check Vercel logs.`;
-        setError(msg);
+        setError(data.error || `Server error (${res.status})`);
         return;
       }
       setTestSuccess(true);
       setTimeout(() => setTestSuccess(false), 5000);
     } catch (err: any) {
-      setError(err?.message || "Network error ΓÇö could not reach the server.");
+      setError(err?.message || "Network error: could not send test alert");
     } finally {
       setTestSending(false);
     }

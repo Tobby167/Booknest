@@ -35,7 +35,7 @@ export function PushNotificationBanner() {
               ) : (
                 <Send className="h-3 w-3" />
               )}
-              {testSuccess ? "Γ£ô Alert Sent!" : testSending ? "Sending..." : "Send Test Alert"}
+              {testSuccess ? "Alert Sent!" : testSending ? "Sending..." : "Send Test Alert"}
             </button>
             <button
               onClick={() => setDismissed(true)}
@@ -70,7 +70,7 @@ export function PushNotificationBanner() {
           <>
             <p className="font-semibold text-indigo-900">Enable push notifications</p>
             <p className="text-indigo-700 mt-0.5 text-xs">
-              Get instant alerts on this device whenever a new booking, payment, or cancellation comes in ΓÇö even when the browser is closed.
+              Get instant alerts on this device whenever a new booking, payment, or cancellation comes in — even when the browser is closed.
             </p>
             {error && <p className="mt-1.5 text-red-600 text-xs font-medium bg-red-50 p-1.5 rounded border border-red-200">{error}</p>}
             <button
@@ -94,7 +94,7 @@ export function PushNotificationBanner() {
   );
 }
 
-/** Small icon button for the dashboard header ΓÇö shows current status & allows quick test */
+/** Small icon button for the dashboard header — shows current status & allows quick test */
 export function PushNotificationToggle() {
   const { state, subscribe, unsubscribe, sendTest, testSending } = usePushNotifications();
 
@@ -106,7 +106,7 @@ export function PushNotificationToggle() {
     <div className="inline-flex items-center gap-1.5">
       <button
         onClick={isOn ? unsubscribe : subscribe}
-        title={isOn ? "Notifications ON ΓÇö click to disable" : "Enable push notifications"}
+        title={isOn ? "Notifications ON — click to disable" : "Enable push notifications"}
         className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
           isOn
             ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
