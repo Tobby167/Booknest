@@ -1,5 +1,3 @@
-const CACHE_NAME = "booknest-shell-clean";
-
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
@@ -7,12 +5,15 @@ self.addEventListener("install", () => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.registration.unregister())
+      .then(() => self.clients.matchAll())
+      .then((clients) => {
+        clients.forEach((client) => {
+          if (client.url && "navigate" in client) {
+            client.navigate(client.url);
+          }
+        });
+      })
   );
   self.clients.claim();
-});
-
-self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET" || event.request.mode !== "navigate") return;
-
-  event.respondWith(fetch(event.request));
 });
